@@ -14,7 +14,7 @@ class Chatbots {
     }
 
     // Tạo chatbot mới
-    static async createChatbot(user_id, name, description, dify_chatbot_id, status, configuration) {
+    static async createChatbot(user_id, name, description, dify_chatbot_id, status='active', configuration=null) {
         const query = `
             INSERT INTO chatbots (user_id, name, description, dify_chatbot_id, status, configuration, create_at, update_at)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())

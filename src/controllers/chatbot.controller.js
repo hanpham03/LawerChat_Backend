@@ -1,71 +1,111 @@
 const Chatbots = require('../models/chatbot.model');
 // const axios = require('axios');
-const chat_default_id = "500505a5-0f8d-4c23-972d-ce0a06647513";
+const chat_default_id = "4504b133-a802-4722-b0b9-495ece7dfb16";
 const jwt = require('jsonwebtoken');
 
 class ChatbotController {
-    // tạo mới chatbot
-    async createChatbot(req, res) {
-        try {
-            const { user_id, name, description, dify_chatbot_id, status, configuration } = req.body;
-            const chatbotId = await Chatbots.createChatbot(
-                user_id, name, description, dify_chatbot_id, status, configuration
-            );
-            res.status(201).json({ message: 'Chatbot created successfully', chatbotId });
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
+  
+  // tạo mới chatbot
+  async createChatbot(req, res) {
+    try {
+      // 1) Lấy token từ header Authorization
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Missing Dify Token" });
+      }
+      const dify_token = authHeader.split(" ")[1];
+      console.log("Dify Token:", dify_token);
+  
+      // 2) Lấy dữ liệu từ request body
+      const { user_id, name, description, dify_chatbot_id, status, configuration, icon } = req.body;
+  
+      if (!name) {
+        return res.status(400).json({ message: "Missing name required fields" });
+      }
+  
+      // 3) Lưu chatbot vào database
+      const chatbotId = await Chatbots.createChatbot(user_id, name, description, dify_chatbot_id, status, configuration);
+      
+      // 4) Gửi request tạo chatbot trên Dify
+      const apiResponse = await fetch("http://localhost/console/api/apps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${dify_token}`,
+        },
+        body: JSON.stringify({
+          name,
+          icon: icon || "", // Nếu không có icon, gửi chuỗi rỗng
+          description,
+          mode: "chat",
+        }),
+      });
+  
+      // 5) Kiểm tra phản hồi từ API Dify
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        console.error("Dify API Error:", errorData);
+        return res.status(apiResponse.status).json({ message: "Failed to create chatbot on Dify", error: errorData });
+      }
+  
+      // 6) Trả về kết quả thành công
+      return res.status(201).json({ message: "Chatbot created successfully", chatbotId });
+  
+    } catch (error) {
+      console.error("Server Error:", error);
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
+  }
 
-    // Lấy thông tin chatbot theo ID
-    async getChatbot(req, res) {
-        try {
-            const chatbot = await Chatbots.getChatbotById(req.params.id);
-            if (!chatbot) {
-                return res.status(404).json({ message: 'Chatbot not found' });
-            }
-            res.json(chatbot);
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
-    }
+  // Lấy thông tin chatbot theo ID
+  async getChatbot(req, res) {
+      try {
+          const chatbot = await Chatbots.getChatbotById(req.params.id);
+          if (!chatbot) {
+              return res.status(404).json({ message: 'Chatbot not found' });
+          }
+          res.json(chatbot);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  }
 
-    // Lấy danh sách chatbot của một người dùng
-    async getChatbotsByUser(req, res) {
-        try {
-            const chatbots = await Chatbots.getChatbotsByUser(req.params.user_id);
-            res.json(chatbots);
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
-    }
+  // Lấy danh sách chatbot của một người dùng
+  async getChatbotsByUser(req, res) {
+      try {
+          const chatbots = await Chatbots.getChatbotsByUser(req.params.user_id);
+          res.json(chatbots);
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  }
 
-    // Cập nhật thông tin chatbot
-    async updateChatbot(req, res) {
-        try {
-            const updateData = req.body; // Dữ liệu cập nhật
-            const affectedRows = await Chatbots.updateChatbot(req.params.id, updateData);
-            if (!affectedRows) {
-                return res.status(404).json({ message: 'Chatbot not found' });
-            }
-            res.json({ message: 'Chatbot updated successfully' });
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
-    }
+  // Cập nhật thông tin chatbot
+  async updateChatbot(req, res) {
+      try {
+          const updateData = req.body; // Dữ liệu cập nhật
+          const affectedRows = await Chatbots.updateChatbot(req.params.id, updateData);
+          if (!affectedRows) {
+              return res.status(404).json({ message: 'Chatbot not found' });
+          }
+          res.json({ message: 'Chatbot updated successfully' });
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  }
 
-    // Xóa chatbot theo ID
-    async deleteChatbot(req, res) {
-        try {
-            const affectedRows = await Chatbots.deleteChatbot(req.params.id);
-            if (!affectedRows) {
-                return res.status(404).json({ message: 'Chatbot not found' });
-            }
-            res.json({ message: 'Chatbot deleted successfully' });
-        } catch (error) {
-            res.status(500).json({ message: error.message });
-        }
-    }
+  // Xóa chatbot theo ID
+  async deleteChatbot(req, res) {
+      try {
+          const affectedRows = await Chatbots.deleteChatbot(req.params.id);
+          if (!affectedRows) {
+              return res.status(404).json({ message: 'Chatbot not found' });
+          }
+          res.json({ message: 'Chatbot deleted successfully' });
+      } catch (error) {
+          res.status(500).json({ message: error.message });
+      }
+  }
 
   /**
    * Gọi API Dify để chat (streaming).
