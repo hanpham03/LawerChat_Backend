@@ -14,14 +14,15 @@ class Chatbots {
     }
 
     // Tạo chatbot mới
-    static async createChatbot(user_id, name, description, dify_chatbot_id, status='active', configuration=null) {
+    static async createChatbot(user_id, name, description, dify_chatbot_id, status = 'active', configuration = null) {
         const query = `
-            INSERT INTO chatbots (user_id, name, description, dify_chatbot_id, status, configuration, create_at, update_at)
+            INSERT INTO chatbots (user_id, name, description, dify_chatbot_id, status, configuration, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
         `;
         const [result] = await db.execute(query, [user_id, name, description, dify_chatbot_id, status, configuration]);
         return result.insertId;
     }
+
 
     // Lấy thông tin một chatbot theo ID
     static async getChatbotById(id) {
@@ -32,7 +33,7 @@ class Chatbots {
 
     // Lấy tất cả chatbot của một người dùng
     static async getChatbotsByUser(user_id) {
-        const query = 'SELECT * FROM chatbots WHERE user_id = ? ORDER BY create_at DESC';
+        const query = 'SELECT * FROM chatbots WHERE user_id = ? ORDER BY created_at DESC';
         const [rows] = await db.execute(query, [user_id]);
         return rows;
     }

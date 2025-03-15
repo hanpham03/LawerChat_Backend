@@ -17,6 +17,7 @@ const validateChatbot = [
 // Routes
 // Lấy danh sách chatbot của một người dùng
 router.get('/user/:user_id', authMiddleware.verifyToken, chatbotController.getChatbotsByUser);
+router.get('/getAllChatbotDify', chatbotController.getChatbotsByUserAndStatus);
 
 // Tạo chatbot mới
 router.post('/', authMiddleware.verifyToken, validateChatbot, chatbotController.createChatbot);

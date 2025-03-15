@@ -13,7 +13,7 @@ const validateChatSession = [
 // Routes
 // Lấy tất cả phiên chat của một người dùng
 router.get('/user/:user_id', authMiddleware.verifyToken, chatSessionController.getSessionsByUser);
-
+router.get('/chatbot/:chatbot_id', chatSessionController.getSessionsByChatbot);
 // Tạo phiên chat mới
 router.post('/', authMiddleware.verifyToken, validateChatSession, chatSessionController.createSession);
 

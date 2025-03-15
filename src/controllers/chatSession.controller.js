@@ -76,6 +76,15 @@ class ChatSessionController {
             res.status(500).json({ message: error.message });
         }
     }
+
+    async getSessionsByChatbot(req, res) {
+        try {
+            const sessions = await ChatSessions.getSessionsByChatbot(req.params.chatbot_id);
+            res.json(sessions);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
     
 }
 

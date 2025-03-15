@@ -22,6 +22,12 @@ class ChatSessions {
         const [rows] = await db.execute(query, [session_id]);
         return rows.length ? rows[0] : null;
     }
+    
+    static async getSessionsByChatbot(chatbot_id) {
+        const query = 'SELECT * FROM chatsessions WHERE chatbot_id = ? ORDER BY start_time DESC';
+        const [rows] = await db.execute(query, [chatbot_id]);
+        return rows;
+    }
 
     // Lấy tất cả phiên trò chuyện của một người dùng
     static async getSessionsByUser(user_id) {

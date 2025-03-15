@@ -9,7 +9,8 @@ const { validateRegister, validateLogin, validateChangePassword } = require('../
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
 router.post('/logout', authController.logout);
-
+router.post('/verifyOtp', authController.VerifyOTP);
+router.post('/sendOtp', authController.sendOtp);
 
 // Protected routes (require authentication)
 router.get('/profile', authMiddleware.verifyToken, authController.getProfile);

@@ -44,7 +44,6 @@ class MessageController {
         try {
             // Lấy session_id từ req.params
             const { session_id } = req.params;
-            console.log("🔍 Lấy tất cả message của session:", session_id);
             if (!session_id) {
                 return res.status(400).json({ message: "Thiếu session_id" });
             }

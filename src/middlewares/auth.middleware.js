@@ -30,7 +30,6 @@ const verifyToken = (req, res, next) => {
  */
 const verifyDifyToken = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
-    console.log('token 123', token);
 
     if (!token) {
         return res.status(403).json({ message: 'No Dify token provided' });

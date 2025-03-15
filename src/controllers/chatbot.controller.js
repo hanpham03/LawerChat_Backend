@@ -14,19 +14,15 @@ class ChatbotController {
         return res.status(401).json({ message: "Missing Dify Token" });
       }
       const dify_token = authHeader.split(" ")[1];
-      console.log("Dify Token:", dify_token);
   
       // 2) Lấy dữ liệu từ request body
-      const { user_id, name, description, dify_chatbot_id, status, configuration, icon } = req.body;
+      const { user_id, name, description, icon, mode } = req.body;
   
       if (!name) {
         return res.status(400).json({ message: "Missing name required fields" });
       }
   
-      // 3) Lưu chatbot vào database
-      const chatbotId = await Chatbots.createChatbot(user_id, name, description, dify_chatbot_id, status, configuration);
-      
-      // 4) Gửi request tạo chatbot trên Dify
+      // 3) Gửi request tạo chatbot trên Dify
       const apiResponse = await fetch("http://localhost/console/api/apps", {
         method: "POST",
         headers: {
@@ -35,18 +31,24 @@ class ChatbotController {
         },
         body: JSON.stringify({
           name,
-          icon: icon || "", // Nếu không có icon, gửi chuỗi rỗng
           description,
-          mode: "chat",
+          icon: icon || "", // Nếu không có icon, gửi chuỗi rỗng
+          mode,
         }),
       });
   
-      // 5) Kiểm tra phản hồi từ API Dify
+      // Chuyển response thành JSON
+      const data = await apiResponse.json();
+  
+      // 4) Kiểm tra phản hồi từ API Dify
       if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        console.error("Dify API Error:", errorData);
-        return res.status(apiResponse.status).json({ message: "Failed to create chatbot on Dify", error: errorData });
+        console.error("Dify API Error:", data);
+        return res.status(apiResponse.status).json({ message: "Failed to create chatbot on Dify", error: data });
       }
+  
+      // 5) Lưu chatbot vào database
+      const chatbotId = data.id; // ✅ Lấy ID từ phản hồi Dify
+      await Chatbots.createChatbot(user_id, name, description, chatbotId); // ✅ Lưu chatbot vào DB
   
       // 6) Trả về kết quả thành công
       return res.status(201).json({ message: "Chatbot created successfully", chatbotId });
@@ -55,7 +57,7 @@ class ChatbotController {
       console.error("Server Error:", error);
       return res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
-  }
+  }  
 
   // Lấy thông tin chatbot theo ID
   async getChatbot(req, res) {
@@ -119,7 +121,6 @@ class ChatbotController {
         return res.status(401).json({ message: "Missing Dify Token" });
       }
       const dify_token = authHeader.split(' ')[1];
-      console.log('dify_token', dify_token);
 
       // 2) Lấy query từ body
       const { query } = req.body;
@@ -130,10 +131,8 @@ class ChatbotController {
       // 3) Giải mã token để lấy user_id (inner try/catch)
       try {
         const decoded = jwt.decode(dify_token); // Giải mã JWT không cần secret
-        console.log('Decoded token:', decoded);
 
         const userId = decoded.user_id || decoded.sub;
-        console.log('Extracted userId:', userId);
         if (!userId) {
           return res.status(401).json({ message: 'Unauthorized: User ID not found in token' });
         }
@@ -191,7 +190,6 @@ class ChatbotController {
 
             try {
             const event = JSON.parse(trimmed);
-            console.log('Event received:', event); // Debug: in ra event nhận được
             if (event.event === 'workflow_finished') {
                 finalAnswer = event.data?.outputs?.answer || '';
                 done = true;
@@ -204,8 +202,6 @@ class ChatbotController {
         }
 
         return res.json({ answer: finalAnswer });
-
-
 
         // 7) Trả về cho frontend câu trả lời cuối
         return res.json({ answer: finalAnswer });
@@ -223,6 +219,41 @@ class ChatbotController {
       const errorData = error?.response?.data || { message: error.message };
       return res.status(statusCode).json(errorData);
     }
+  }
+
+  /**
+   * lấy danh sách tất cả chatbot còn tồn tại trong dify của một người dùng
+   */
+  
+  async getChatbotsByUserAndStatus(req, res) {
+    try {
+      // 1) Lấy token từ header Authorization
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "Missing Dify Token" });
+      }
+      const dify_token = authHeader.split(' ')[1];
+
+      const response = await fetch('http://localhost/console/api/apps?page=1&limit=100&name=&is_created_by_me=false', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${dify_token}`,
+        }
+      });
+      const result = await response.json();
+
+      // Lọc dữ liệu chỉ lấy id và name
+      const chatbots = result.data.map(bot => ({
+          id: bot.id,
+          name: bot.name
+      }));
+
+      // Trả về JSON cho frontend
+      res.status(200).json(chatbots);
+    } catch (error) {
+        console.error('Lỗi gọi API:', error);
+        res.status(500).json({ error: 'Token dify hết hạn' });
+    }  
   }
 }
 
