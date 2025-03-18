@@ -29,7 +29,7 @@ router.get('/:id', authMiddleware.verifyToken, chatbotController.getChatbot);
 router.put('/:id', authMiddleware.verifyToken, chatbotController.updateChatbot);
 
 // Xóa chatbot theo ID
-router.delete('/:id', authMiddleware.verifyToken, chatbotController.deleteChatbot);
+router.delete('/:id', chatbotController.deleteChatbot);
 
 // **Endpoint proxy gọi API Dify**
 router.post('/chat', chatbotController.chatWithDify);

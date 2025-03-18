@@ -14,14 +14,18 @@ class Chatbots {
     }
 
     // Tạo chatbot mới
-    static async createChatbot(user_id, name, description, dify_chatbot_id, status = 'active', configuration = null) {
+    static async createChatbot(user_id, name, description, prompt, dify_chatbot_id, status = 'active') {
         const query = `
             INSERT INTO chatbots (user_id, name, description, dify_chatbot_id, status, configuration, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
         `;
+    
+        // Lưu trực tiếp prompt vào cột configuration
+        const configuration = JSON.stringify({ prompt });
+    
         const [result] = await db.execute(query, [user_id, name, description, dify_chatbot_id, status, configuration]);
         return result.insertId;
-    }
+    }      
 
 
     // Lấy thông tin một chatbot theo ID

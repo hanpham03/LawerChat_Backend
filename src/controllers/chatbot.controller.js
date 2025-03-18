@@ -16,7 +16,7 @@ class ChatbotController {
       const dify_token = authHeader.split(" ")[1];
   
       // 2) Lấy dữ liệu từ request body
-      const { user_id, name, description, icon, mode } = req.body;
+      const { user_id, name, description, prompt, icon, mode } = req.body;
   
       if (!name) {
         return res.status(400).json({ message: "Missing name required fields" });
@@ -48,8 +48,30 @@ class ChatbotController {
   
       // 5) Lưu chatbot vào database
       const chatbotId = data.id; // ✅ Lấy ID từ phản hồi Dify
-      await Chatbots.createChatbot(user_id, name, description, chatbotId); // ✅ Lưu chatbot vào DB
+      await Chatbots.createChatbot(user_id, name, description, prompt, chatbotId); // ✅ Lưu chatbot vào DB
   
+      // 6) update prompt cho chatbot vừa tạo lên dify
+      const updatePrompt = await fetch(`http://localhost/console/api/apps/${chatbotId}/model-config`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${dify_token}`,
+        },
+        body: JSON.stringify({
+          pre_prompt: prompt,
+          prompt_type: "simple",
+          retriever_resource: {
+            enabled: true
+          },
+          model: {
+              provider: "openrouter",
+              name: "openai/gpt-3.5-turbo",
+              mode: "chat",
+              completion_params: {}
+          }
+        }),
+      });
+
       // 6) Trả về kết quả thành công
       return res.status(201).json({ message: "Chatbot created successfully", chatbotId });
   
@@ -98,16 +120,40 @@ class ChatbotController {
 
   // Xóa chatbot theo ID
   async deleteChatbot(req, res) {
-      try {
-          const affectedRows = await Chatbots.deleteChatbot(req.params.id);
-          if (!affectedRows) {
-              return res.status(404).json({ message: 'Chatbot not found' });
-          }
-          res.json({ message: 'Chatbot deleted successfully' });
-      } catch (error) {
-          res.status(500).json({ message: error.message });
-      }
-  }
+    try {
+        // 1) Lấy token từ header Authorization
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ message: "Missing Dify Token" });
+        }
+        const dify_token = authHeader.split(" ")[1];
+
+        // 2) Lấy chatbotId từ params và dify_chatbot_id từ body
+        const chatbotId = req.params.id;
+        const { dify_chatbot_id } = req.body;
+
+        if (!dify_chatbot_id) {
+            return res.status(400).json({ message: "Missing dify_chatbot_id" });
+        }
+
+        // 3) Xóa chatbot trong database
+        const affectedRows = await Chatbots.deleteChatbot(chatbotId);
+        if (!affectedRows) {
+            return res.status(404).json({ message: "Chatbot not found" });
+        }
+
+        // 4) Gọi API Dify để xóa chatbot trên hệ thống Dify
+        const response = await fetch(`http://localhost/console/api/apps/${dify_chatbot_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${dify_token}` },
+        });
+
+        res.json({ message: "Chatbot deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 
   /**
    * Gọi API Dify để chat (streaming).
