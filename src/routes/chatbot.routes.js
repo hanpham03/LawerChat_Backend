@@ -1,38 +1,47 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const chatbotController = require('../controllers/chatbot.controller');
-const authMiddleware = require('../middlewares/auth.middleware');
-const { body } = require('express-validator');
+const chatbotController = require("../controllers/chatbot.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
+const { body } = require("express-validator");
 
 // Validation middleware cho tạo chatbot
 const validateChatbot = [
-    body('user_id').notEmpty().withMessage('User ID is required'),
-    body('name').notEmpty().withMessage('Name is required'),
-    // body('description').optional().trim(), // description có thể là optional
-    body('dify_chatbot_id').notEmpty().withMessage('Dify Chatbot ID is required'),
-    body('status').notEmpty().withMessage('Status is required'),
-    body('configuration').notEmpty().withMessage('Configuration is required')
+  body("user_id").notEmpty().withMessage("User ID is required"),
+  body("name").notEmpty().withMessage("Name is required"),
+  // body('description').optional().trim(), // description có thể là optional
+  body("dify_chatbot_id").notEmpty().withMessage("Dify Chatbot ID is required"),
+  body("status").notEmpty().withMessage("Status is required"),
+  body("configuration").notEmpty().withMessage("Configuration is required"),
 ];
 
 // Routes
 // Lấy danh sách chatbot của một người dùng
-router.get('/user/:user_id', authMiddleware.verifyToken, chatbotController.getChatbotsByUser);
-router.get('/getAllChatbotDify', chatbotController.getChatbotsByUserAndStatus);
+router.get(
+  "/user/:user_id",
+  authMiddleware.verifyToken,
+  chatbotController.getChatbotsByUser
+);
+router.get("/getAllChatbotDify", chatbotController.getChatbotsByUserAndStatus);
 
 // Tạo chatbot mới
-router.post('/', authMiddleware.verifyToken, validateChatbot, chatbotController.createChatbot);
+router.post(
+  "/",
+  authMiddleware.verifyToken,
+  validateChatbot,
+  chatbotController.createChatbot
+);
 
 // Lấy thông tin chatbot theo ID
-router.get('/:id', authMiddleware.verifyToken, chatbotController.getChatbot);
+router.get("/:id", authMiddleware.verifyToken, chatbotController.getChatbot);
 
 // Cập nhật thông tin chatbot theo ID
-router.put('/:id', authMiddleware.verifyToken, chatbotController.updateChatbot);
+router.put("/:id", chatbotController.updateChatbot);
 
 // Xóa chatbot theo ID
-router.delete('/:id', chatbotController.deleteChatbot);
+router.delete("/:id", chatbotController.deleteChatbot);
 
 // **Endpoint proxy gọi API Dify**
-router.post('/chat', chatbotController.chatWithDify);
-router.post('/create-chatbot', chatbotController.createChatbot);
+router.post("/chat", chatbotController.chatWithDify);
+router.post("/create-chatbot", chatbotController.createChatbot);
 
 module.exports = router;
