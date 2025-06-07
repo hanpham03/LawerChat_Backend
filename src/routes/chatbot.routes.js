@@ -8,22 +8,27 @@ const { body } = require("express-validator");
 const validateChatbot = [
   body("user_id").notEmpty().withMessage("User ID is required"),
   body("name").notEmpty().withMessage("Name is required"),
-  // body('description').optional().trim(), // description có thể là optional
   body("dify_chatbot_id").notEmpty().withMessage("Dify Chatbot ID is required"),
   body("status").notEmpty().withMessage("Status is required"),
   body("configuration").notEmpty().withMessage("Configuration is required"),
 ];
 
-// Routes
-// Lấy danh sách chatbot của một người dùng
+// 🚀 **Đúng thứ tự route**
+
+// 🔹 Lấy danh sách chatbot của một người dùng (cụ thể)
 router.get(
   "/user/:user_id",
   authMiddleware.verifyToken,
   chatbotController.getChatbotsByUser
 );
+
+// 🔹 Lấy tất cả chatbot có trạng thái từ Dify
 router.get("/getAllChatbotDify", chatbotController.getChatbotsByUserAndStatus);
 
-// Tạo chatbot mới
+// 🔹 Lấy thông tin chatbot theo ID (cụ thể)
+router.get("/:id", authMiddleware.verifyToken, chatbotController.getChatbot);
+
+// 🔹 Tạo chatbot mới
 router.post(
   "/",
   authMiddleware.verifyToken,
@@ -31,17 +36,19 @@ router.post(
   chatbotController.createChatbot
 );
 
-// Lấy thông tin chatbot theo ID
-router.get("/:id", authMiddleware.verifyToken, chatbotController.getChatbot);
-
-// Cập nhật thông tin chatbot theo ID
+// 🔹 Cập nhật thông tin chatbot theo ID
 router.put("/:id", chatbotController.updateChatbot);
 
-// Xóa chatbot theo ID
+// 🔹 Xóa chatbot theo ID
 router.delete("/:id", chatbotController.deleteChatbot);
 
-// **Endpoint proxy gọi API Dify**
+// 🔹 Endpoint proxy gọi API Dify
 router.post("/chat", chatbotController.chatWithDify);
+
+// (Tùy chọn) Nếu bạn muốn giữ "/create-chatbot", hãy đảm bảo nó có chức năng khác biệt
 router.post("/create-chatbot", chatbotController.createChatbot);
+
+// 🔹 Lấy tất cả chatbot (TỔNG QUAN - để cuối cùng)
+router.get("/", chatbotController.getAllChatbots);
 
 module.exports = router;

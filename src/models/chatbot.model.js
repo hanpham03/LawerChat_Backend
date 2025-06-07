@@ -43,6 +43,13 @@ class Chatbots {
     return result.insertId;
   }
 
+  // lấy tất cả chatbot (for admin)
+  static async getAllChatbots() {
+    const query = "SELECT * FROM chatbots ORDER BY created_at DESC";
+    const [rows] = await db.execute(query);
+    return rows;
+  }
+
   // Lấy thông tin một chatbot theo ID
   static async getChatbotById(id) {
     const query = "SELECT * FROM chatbots WHERE id = ?";

@@ -1,7 +1,7 @@
 const { config } = require("dotenv");
 const Chatbots = require("../models/chatbot.model");
 // const axios = require('axios');
-const chat_default_id = "4504b133-a802-4722-b0b9-495ece7dfb16";
+const chat_default_id = "e0278672-5ad4-42f5-a0ae-e44249f10af3";
 const jwt = require("jsonwebtoken");
 
 class ChatbotController {
@@ -14,14 +14,6 @@ class ChatbotController {
     nameModel
   ) {
     try {
-      console.log(
-        "Updating chatbot configuration on Dify...",
-        chatbotId,
-        dify_token,
-        prompt,
-        provider,
-        nameModel
-      );
       const response = await fetch(
         `http://localhost/console/api/apps/${chatbotId}/model-config`,
         {
@@ -154,6 +146,15 @@ class ChatbotController {
         return res.status(404).json({ message: "Chatbot not found" });
       }
       res.json(chatbot);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getAllChatbots(req, res) {
+    try {
+      const chatbots = await Chatbots.getAllChatbots();
+      res.json(chatbots);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -417,7 +418,7 @@ class ChatbotController {
                   break;
                 }
               } catch (err) {
-                console.error("Parse error for line:", trimmed, err);
+                console.error("Parse error for line:");
               }
             }
           }
